@@ -10,3 +10,7 @@ Tested on:
 2. make the file executeable: `chmod +x measuredisk.sh` (assuming you are in the same directory)
 3. run: `sudo ./measuredisk.sh`
 
+## Next:
+- Write some more background.
+- Provide some reference stats
+- Make script less clunky
