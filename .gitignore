@@ -1,0 +1,7 @@
+# Mac .gitignore
+.DS_Store
+
+#Windows
+Thumbs.db
+
+#Linux
