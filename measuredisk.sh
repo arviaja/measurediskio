@@ -102,7 +102,8 @@ fi
 # display hostname:
 
 echo "Hostname: $(hostname)"
-echo "Testing disk:" $disk
+echo "Date and Time: $(date)"
+echo "Testing disk: $(disk)"
 echo "------------------------------------"
 echo ""
 
@@ -195,3 +196,6 @@ else
         echo "This script only works on Linux or MacOS"
         exit 1
 fi
+
+echo "End of Test"
+echo "-----------"
