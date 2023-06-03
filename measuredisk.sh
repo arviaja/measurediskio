@@ -100,10 +100,12 @@ fi
 # Measures how quickly large files can be read from or written to the disk in a continuous, sequential manner.
 
 if [ "$OS" == "linux" ]; then
+        echo "Testing disk:" $disk
         echo "Testing Sequential Write Speed..."
         dd if=/dev/zero of=/tmp/test1.img bs=1G count=1 oflag=dsync
         echo ""
 elif [ "$OS" == "macos" ]; then
+        echo "Testing disk:" $disk
         echo "Testing Sequential Write Speed..."
         dd if=/dev/zero of=/tmp/test1.img bs=1G count=1
         echo ""
