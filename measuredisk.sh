@@ -1,4 +1,6 @@
 #!/bin/bash
+# Created by Sebastian Varga
+# License: Apache 2.0
 
 # Detect if this script is executed on Linux or MacOS. Set the OS variable accordingly
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
