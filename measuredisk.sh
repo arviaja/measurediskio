@@ -103,7 +103,7 @@ fi
 
 echo "Hostname: $(hostname)"
 echo "Date and Time: $(date)"
-echo "Testing disk: $(disk)"
+echo "Testing disk:" $disk
 echo "------------------------------------"
 echo ""
 
