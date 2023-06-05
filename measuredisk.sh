@@ -22,7 +22,7 @@ if [ "$EUID" -ne 0 ]
   then echo "Please run as root or sudo"
   exit 1
 fi
-
+@sada
 # Check if fio is installed or not. Exit if not installed
 
 if ! [ -x "$(command -v fio)" ]; then
@@ -198,6 +198,12 @@ else
         echo "This script only works on Linux or MacOS"
         exit 1
 fi
+
+# Cleanups
+
+#remove test files
+rm /tmp/test1.img
+rm /tmp/testfile
 
 echo "End of Test"
 echo "-----------"
