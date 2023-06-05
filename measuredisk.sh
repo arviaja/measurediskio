@@ -202,8 +202,10 @@ fi
 # Cleanups
 
 #remove test files
+echo "Removing test files..."
 rm /tmp/test1.img
 rm /tmp/testfile
+echo "Test files removed"
 
 echo "End of Test"
 echo "-----------"
