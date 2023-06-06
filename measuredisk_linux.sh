@@ -1,112 +1,60 @@
 #!/bin/bash
-# Created by Sebastian Varga
-# License: Apache 2.0
 
-# Pre-Checks
-# ----------
+min_size=$((100*1024**3))
+min_free=$((5*1024**3))
+test_file="test_io"
+numjobs=16
 
-# Detect if this script is executed on Linux or any other OS. If not Linux, exit with error message
+# Probe for devices with at least 100 GB capacity
+devices=$(lsblk -d -o NAME,TYPE -n | awk '$2 == "disk" {print $1}')
 
-if [[ "$OSTYPE" != "linux-gnu" ]]; then
-        echo "This script only works on Linux"
-        exit 1
-fi
+# Create and navigate to the testing directory
+mkdir -p ~/disk_testing
+cd ~/disk_testing
 
-# Check if run with root privileges. Exit if not run as root and show how to run as root or sudo
+# Loop through each device
+for device in $devices; do
+    echo "Testing device /dev/${device}..."
 
-if [ "$EUID" -ne 0 ]
-  then echo "Please run as root or sudo"
-  exit 1
-fi
+    # Check if device is large enough
+    device_size=$(blockdev --getsize64 "/dev/${device}")
+    
+    if [ -z "$device_size" ]; then
+        echo "Skipping /dev/${device} - Could not determine size"
+        continue
+    fi
 
-# Check if fio, iostat and dd are installed or not. Exit if not installed and suggest how to install via apt-get and yum
+    if [ $device_size -ge $min_size ]; then
+        # Get mountpoints
+        mountpoints=$(lsblk -n -o MOUNTPOINT "/dev/${device}")
+        total_free_space=0
 
-if ! [ -x "$(command -v fio)" ]; then
-  echo 'Error: fio is not installed.' >&2
-  echo "Install fio on Linux using the following command:"
-  echo "sudo apt-get install fio"
-  echo "or"
-  echo "sudo yum install fio"
-  exit 1
-fi
+        # Calculate total free space across all mount points
+        for mountpoint in $mountpoints; do
+            if [ -n "$mountpoint" ]; then
+                free_space=$(df --output=avail "$mountpoint" | tail -n 1)
+                total_free_space=$(($total_free_space + $free_space*1024))
+            fi
+        done
 
-if ! [ -x "$(command -v iostat)" ]; then
-  echo 'Error: iostat is not installed.' >&2
-  echo "Install iostat on Linux using the following command:"
-  echo "sudo apt-get install sysstat"
-  echo "or"
-  echo "sudo yum install sysstat"
-  exit 1
-fi
+        if [ $total_free_space -ge $min_free ]; then
+          echo "/dev/${device} has enough space, conducting tests..."
 
-if ! [ -x "$(command -v dd)" ]; then
-  echo 'Error: dd is not installed.' >&2
-  echo "Install dd on Linux using the following command:"
-  echo "sudo apt-get install coreutils"
-  echo "or"
-  echo "sudo yum install coreutils"
-  exit 1
-fi
+          # Perform testing here
 
-# Declare variables
-# -----------------
+          # Measuring IOPS
+          fio --randrepeat=1 --ioengine=posixaio --direct=1 --gtod_reduce=1 --name=test --filename=/dev/$device --bs=4k --iodepth=64 --size=1G --readwrite=randrw --rwmixread=75 --numjobs=$numjobs
 
-fiothreads=16 # default number of threads for fio test
-fiosize=1G # default size of the fio test file
-fiofilename=fiofile # default name of the fio test file
-fioiodepth=64 # default number of I/O operations to keep in flight
-fioioengine=libaio # default I/O engine for fio test
+          # Measuring Throughput
+          fio --randrepeat=1 --ioengine=posixaio --direct=1 --gtod_reduce=1 --name=test --filename=/dev/$device --bs=64k --iodepth=64 --size=1G --readwrite=randrw --rwmixread=75 --numjobs=$numjobs
 
-# Functions
-# ---------
+          # Measuring Latency
+          fio --randrepeat=1 --ioengine=posixaio --direct=1 --gtod_reduce=1 --name=test --filename=/dev/$device --bs=4k --iodepth=1 --size=1G --readwrite=randrw --rwmixread=75 --numjobs=$numjobs
 
-
-# Inputs
-# ------
-
-# Ask which disk(s) to test. Show a list of available disks and let the user choose one or more disks. Save in selecteddisks variable
-
-echo "Which disk(s) do you want to test?"
-echo "Available disks are:"
-lsblk -d -n -p -o NAME,SIZE,TYPE | grep disk
-echo "Enter the disk(s) you want to test. Separate multiple disks with a space."
-read selecteddisks
-
-# Check if the selected disk(s) exist. If not, repeat the question until the user enters a valid disk(s)
-
-while [ ! -b "$selecteddisks" ]; do
-        echo "The disk(s) you entered do not exist. Please enter a valid disk(s)."
-        read selecteddisks
+        else
+            echo "/dev/${device} does not have enough free space"
+        fi
+    else
+        echo "/dev/${device} is too small"
+    fi
 done
-
-# show disks that will be tested and ask for confirmation
-
-echo "The following disk(s) will be tested:"
-lsblk -d -n -p -o NAME,SIZE,TYPE | grep disk | grep "$selecteddisks"
-echo "Do you want to continue? (y/n)"
-read confirmation
-
-# If the user does not confirm, exit the script
-
-if [ "$confirmation" != "y" ]; then
-        echo "You did not confirm. Exiting the script."
-        exit 1
-fi
-
-# Ask for the number of threads to use for the fio test. Set to 16 if no input is given. Save in threads variable. Number must be 
-
-echo "How many threads do you want to use for the fio test? (1-64) - default is $(fiothreads)"
-read fiothreads
-
-# Check if the number of threads is between 1 and 64. If not, repeat the question until the user enters a valid number
-
-while [ "$fiothreads" -lt 1 ] || [ "$fiothreads" -gt 64 ]; do
-        echo "The number of threads must be between 1 and 64. Please enter a valid number."
-        read fiothreads
-done
-
-
-# Main Program
-# ------------
-
-echo "Starting the disk test. This will take a while. Please wait."
