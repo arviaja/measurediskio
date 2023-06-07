@@ -101,6 +101,21 @@ fi
 # Test 1: Sequential Write Speed.
 # Measures how quickly large files can be read from or written to the disk in a continuous, sequential manner.
 
+# Display Warning:
+# This script can potentially destroy data on your disk. Use at your own risk. Use only on spare disks or partitions!
+
+echo "WARNING!!!!"
+echo "This script can potentially destroy data on your disk. Use at your own risk. Use only on spare disks or partitions!"
+
+# Ask if user wants to continue or not. Default to "no" Exit if user does not want to continue.
+
+read -p "Do you want to continue? (y/n) " -n 1 -r
+echo ""
+if [[ ! $REPLY =~ ^[Yy]$ ]]
+then
+    exit 1
+fi
+
 # display hostname:
 
 echo "Hostname: $(hostname)"
