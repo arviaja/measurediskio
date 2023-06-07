@@ -1,6 +1,9 @@
 # measurediskio
 A shell script which allows you to measure your disk I/O performance
 
+## Warning !!!
+*This script can potentially destroy data on your disk. Use at your own risk. Use only on spare disks or partitions!*
+
 ##
 Tested on:
 - MacOS 13.4
